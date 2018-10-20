@@ -1,4 +1,3 @@
-from django.http import HttpResponse
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -23,39 +22,56 @@ class CreateView(generics.ListAPIView):
         return queryset
 
 
-class DetailsView(generics.RetrieveUpdateAPIView):
-    """This class handles the http GET, PUT and PATCH requests."""
+class DetailsView(APIView):
+    """This class handles the http GET and PATCH requests."""
 
-    queryset = Token.objects.all()
-    serializer_class = TokenSerializer
-
-
-class RedeemView(APIView):
     # queryset = Token.objects.all()
     # serializer_class = TokenSerializer
     def get_object(self, pk):
         return Token.objects.get(pk=pk)
 
+    def get(self, request, pk):
+        obj = self.get_object(pk)
+        serializer = TokenSerializer(obj)
+        return Response(serializer.data)
+
     def patch(self, request, pk):
         update_object = self.get_object(pk)
-        request.data['is_active']=False
         serializer = TokenSerializer(update_object, data=request.data,
-                                         partial=True)
+                                     partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RedeemView(APIView):
+    def get_object(self, pk):
+        return Token.objects.get(pk=pk)
+
+    def patch(self, request, pk):
+        update_object = self.get_object(pk)
+        request.data['is_active'] = False
+        serializer = TokenSerializer(update_object, data=request.data,
+                                     partial=True)
         if serializer.is_valid():
             self.update_balance(update_object)
             serializer.save()
-            return Response(serializer.data,  status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def update_balance(self, update_object):
         try:
-            accounting_obj = Accounting.objects.get(media_type = update_object.media_type)
+            accounting_obj = Accounting.objects.get(
+                media_type=update_object.media_type)
         except ObjectDoesNotExist:
-            accounting_obj = Accounting(media_type = update_object.media_type, limits = update_object.duration)
+            accounting_obj = Accounting(media_type=update_object.media_type,
+                                        limits=update_object.duration)
         else:
             accounting_obj.limits += update_object.duration
         accounting_obj.save()
         return True
+
 
 class BalanceView(generics.ListAPIView):
     queryset = Accounting.objects.all()
@@ -64,10 +80,9 @@ class BalanceView(generics.ListAPIView):
 
 class HeartbeatView(APIView):
     def get(self, request):
-        type = self.request.query_params.get('type', 'YT')
-        accounting_obj = Accounting.objects.get(media_type=type)
+        source_type = self.request.query_params.get('type', 'YT')
+        accounting_obj = Accounting.objects.get(media_type=source_type)
         accounting_obj.limits -= 5
         accounting_obj.save()
         serializer = AccountingSerializer(accounting_obj)
         return Response(serializer.data)
-
