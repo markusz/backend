@@ -1,0 +1,10 @@
+{
+    "dev": {
+        "aws_region": "eu-central-1",
+        "django_settings": "jall.jall.settings",
+        "profile_name": "personal",
+        "project_name": "hack2018",
+        "runtime": "python3.6",
+        "s3_bucket": "zappa-rjj5oav08"
+    }
+}

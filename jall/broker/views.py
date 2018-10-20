@@ -78,8 +78,18 @@ class BalanceView(generics.ListAPIView):
     serializer_class = AccountingSerializer
 
 
+class BudgetView(APIView):
+    def post(self, request):
+        source_type = self.request.query_params.get('type', 'YT')
+        accounting_obj = Accounting.objects.get(media_type=source_type)
+        accounting_obj.limits += request.data['duration']
+        accounting_obj.save()
+        serializer = AccountingSerializer(accounting_obj)
+        return Response(serializer.data)
+
+
 class HeartbeatView(APIView):
-    def get(self, request):
+    def get(self):
         source_type = self.request.query_params.get('type', 'YT')
         accounting_obj = Accounting.objects.get(media_type=source_type)
         accounting_obj.limits -= 5
