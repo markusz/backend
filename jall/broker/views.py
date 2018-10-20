@@ -1,25 +1,73 @@
 from django.http import HttpResponse
-from rest_framework import generics
-from .serializers import TokenSerializer
-from .models import Token
+from rest_framework import generics, status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from .serializers import TokenSerializer, AccountingSerializer
+from .models import Token, Accounting
+from django.core.exceptions import ObjectDoesNotExist
 
 
-# Create your views here.
-def index(request):
-    return HttpResponse("Hello, world. You are in the root")
-
-class CreateView(generics.ListCreateAPIView):
+class CreateView(generics.ListAPIView):
     """This class defines the create behavior of our rest api."""
+    serializer_class = TokenSerializer
+
+    def get_queryset(self):
+        queryset = Token.objects.all()
+        status = self.request.query_params.get('active', None)
+        if status is not None:
+            if status == 'true':
+                status = True
+            else:
+                status = False
+            queryset = queryset.filter(is_active=status)
+        return queryset
+
+
+class DetailsView(generics.RetrieveUpdateAPIView):
+    """This class handles the http GET, PUT and PATCH requests."""
+
     queryset = Token.objects.all()
     serializer_class = TokenSerializer
 
-    def perform_create(self, serializer):
-        """Save the post data when creating a new token."""
-        serializer.save()
+
+class RedeemView(APIView):
+    # queryset = Token.objects.all()
+    # serializer_class = TokenSerializer
+    def get_object(self, pk):
+        return Token.objects.get(pk=pk)
+
+    def patch(self, request, pk):
+        update_object = self.get_object(pk)
+        request.data['is_active']=False
+        serializer = TokenSerializer(update_object, data=request.data,
+                                         partial=True)
+        if serializer.is_valid():
+            self.update_balance(update_object)
+            serializer.save()
+            return Response(serializer.data,  status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def update_balance(self, update_object):
+        try:
+            accounting_obj = Accounting.objects.get(media_type = update_object.media_type)
+        except ObjectDoesNotExist:
+            accounting_obj = Accounting(media_type = update_object.media_type, limits = update_object.duration)
+        else:
+            accounting_obj.limits += update_object.duration
+        accounting_obj.save()
+        return True
+
+class BalanceView(generics.ListAPIView):
+    queryset = Accounting.objects.all()
+    serializer_class = AccountingSerializer
 
 
-class DetailsView(generics.RetrieveUpdateDestroyAPIView):
-    """This class handles the http GET, PUT and DELETE requests."""
+class HeartbeatView(APIView):
+    def get(self, request):
+        type = self.request.query_params.get('type', 'YT')
+        accounting_obj = Accounting.objects.get(media_type=type)
+        accounting_obj.limits -= 5
+        accounting_obj.save()
+        serializer = AccountingSerializer(accounting_obj)
+        return Response(serializer.data)
 
-    queryset = Token.objects.all()
-    serializer_class = TokenSerializer
