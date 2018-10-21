@@ -78,17 +78,17 @@ WSGI_APPLICATION = 'jall.wsgi.application'
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 
 DATABASES = {
-    'local': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    },
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    # },
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': os.getenv('DBNAME'),
-        'USER': os.getenv('DBUSER'),
-        'PASSWORD': os.getenv('DBPASS'),
+        'NAME': 'dpfc8rkqgdlm7',#os.getenv('DBNAME'),
+        'USER': 'zjnggdvqjcopmu',#os.getenv('DBUSER'),
+        'PASSWORD': '3c5be852f271024cfc70dc79df9c2e5e682b666009c8eeb8f6c14f21a57c2178',#os.getenv('DBPASS'),
         'PORT': '5432',
-        'HOST': os.getenv('DBHOST'),
+        'HOST': 'ec2-54-246-101-215.eu-west-1.compute.amazonaws.com'#os.getenv('DBHOST'),
     }
 }
 
