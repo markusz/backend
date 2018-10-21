@@ -90,7 +90,9 @@ class BudgetView(APIView):
     def post(self, request):
         source_type = self.request.query_params.get('type', 'YT')
         accounting_obj = Accounting.objects.get(media_type=source_type)
-        accounting_obj.limits += request.data['duration']
+        test = accounting_obj.limits + request.data['duration']
+        test = max([0, test])
+        accounting_obj.limits = test
         accounting_obj.save()
         serializer = AccountingSerializer(accounting_obj)
         return Response(serializer.data)
@@ -100,7 +102,9 @@ class HeartbeatView(APIView):
     def get(self, request):
         source_type = request.query_params.get('type', 'YT')
         accounting_obj = Accounting.objects.get(media_type=source_type)
-        accounting_obj.limits -= 2
+        test = accounting_obj.limits - 2
+        test = max([0, test])
+        accounting_obj.limits = test
         accounting_obj.save()
         serializer = AccountingSerializer(accounting_obj)
         return Response(serializer.data)
