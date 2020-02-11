@@ -6,7 +6,7 @@ certifi==2018.10.15
 cfn-flip==1.0.3
 chardet==3.0.4
 Click==7.0
-Django==2.1.2
+Django==2.2.10
 django-cors-headers==2.4.0
 djangorestframework==3.9.0
 docutils==0.14
